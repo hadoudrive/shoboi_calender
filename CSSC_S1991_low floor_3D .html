@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>CSSC S.No.1991 / 5622 — LOWER FLOOR 機関室 3D モデル</title>
+<style>
+  :root{
+    --paper:#e9e4d6; --ink:#15171c; --panel:#11151c; --panel2:#171c26;
+    --line:#2b3340; --sub:#7e8a9c; --txt:#d7dde6;
+    --amber:#e8932a; --steel:#5b87b8; --teal:#2fb6a8; --hot:#e2574b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0a0c10;color:var(--txt);
+    font-family:"Inter","Helvetica Neue",system-ui,sans-serif;overflow:hidden}
+  #app{position:fixed;inset:0}
+  canvas{display:block}
+
+  /* ---- top bar ---- */
+  #topbar{position:fixed;top:0;left:0;right:0;height:54px;display:flex;
+    align-items:center;gap:18px;padding:0 18px;z-index:20;
+    background:linear-gradient(180deg,rgba(10,12,16,.92),rgba(10,12,16,.55) 70%,transparent);
+    pointer-events:none}
+  #topbar .brand{pointer-events:auto;display:flex;flex-direction:column;line-height:1.15}
+  .brand .t1{font-size:13px;letter-spacing:.14em;color:var(--amber);
+    font-family:"SFMono-Regular",ui-monospace,Menlo,Consolas,monospace}
+  .brand .t2{font-size:11px;letter-spacing:.04em;color:var(--sub)}
+
+  /* ---- left panel ---- */
+  #panel{position:fixed;top:64px;left:14px;width:236px;z-index:20;
+    background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line);border-radius:10px;
+    box-shadow:0 18px 50px rgba(0,0,0,.55);overflow:hidden}
+  .sect{padding:12px 14px;border-bottom:1px solid var(--line)}
+  .sect:last-child{border-bottom:none}
+  .sect h4{margin:0 0 9px;font-size:10px;letter-spacing:.18em;color:var(--sub);
+    font-weight:600;font-family:ui-monospace,monospace}
+  .row{display:flex;align-items:center;justify-content:space-between;
+    font-size:12.5px;padding:4px 0;cursor:pointer;user-select:none}
+  .row .lab{display:flex;align-items:center;gap:9px}
+  .sw{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+  .sw.fl{background:var(--amber)} .sw.ol{background:var(--steel)}
+  .sw.pp{background:var(--teal)} .sw.gr{background:#3a4656}
+  .sw.lb{background:#cdd5e0}
+  .chk{width:30px;height:17px;border-radius:9px;background:#2a3240;position:relative;
+    transition:background .15s;flex:0 0 auto}
+  .chk::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;
+    border-radius:50%;background:#6c788a;transition:transform .15s,background .15s}
+  .row.on .chk{background:rgba(232,147,42,.4)}
+  .row.on .chk::after{transform:translateX(13px);background:var(--amber)}
+
+  .vbtns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .vbtns button,.fit{font:600 11px ui-monospace,monospace;letter-spacing:.06em;
+    color:var(--txt);background:#1d242f;border:1px solid var(--line);
+    border-radius:6px;padding:7px 0;cursor:pointer;transition:.12s}
+  .vbtns button:hover,.fit:hover{border-color:var(--amber);color:#fff}
+  .fit{width:100%;margin-top:6px;padding:8px 0}
+
+  /* elevation gauge */
+  .gauge{position:relative;height:118px;margin:2px 0 2px 6px;padding-left:46px}
+  .gauge .axis{position:absolute;left:40px;top:4px;bottom:4px;width:2px;background:#39424f}
+  .glvl{position:absolute;left:0;right:0;display:flex;align-items:center;gap:8px}
+  .glvl .tick{position:absolute;left:40px;width:12px;height:2px}
+  .glvl .gm{position:absolute;left:0;width:36px;text-align:right;font:600 10px ui-monospace,monospace;color:var(--sub)}
+  .glvl .gd{position:absolute;left:58px;font-size:10.5px;color:var(--txt);white-space:nowrap}
+  .band{position:absolute;left:42px;width:150px;border-radius:3px;opacity:.16}
+
+  /* readout */
+  #readout{position:fixed;bottom:14px;left:14px;z-index:20;min-width:236px;
+    background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+    font-family:ui-monospace,monospace;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+  #readout .k{font-size:10px;letter-spacing:.16em;color:var(--sub)}
+  #readout .v{font-size:15px;color:#fff;margin-top:3px}
+  #readout .d{font-size:11.5px;color:var(--steel);margin-top:5px;line-height:1.5}
+  #readout .hot{color:var(--amber)}
+
+  #hint{position:fixed;bottom:14px;right:16px;z-index:20;font-size:11px;color:var(--sub);
+    font-family:ui-monospace,monospace;text-align:right;line-height:1.7;pointer-events:none}
+  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    z-index:50;background:#0a0c10;color:var(--hot);font-family:ui-monospace,monospace;
+    font-size:13px;text-align:center;padding:30px}
+  @media (max-width:640px){#panel{display:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="topbar">
+  <div class="brand">
+    <span class="t1">CSSC S.No.1991 / 5622 — LOWER FLOOR</span>
+    <span class="t2">機関室下層平面 押し出しモデル / 色付き図形のみ抽出 (スケール 18.88 pt = 1 m)</span>
+  </div>
+</div>
+
+<div id="panel">
+  <div class="sect">
+    <h4>表示要素</h4>
+    <div class="row on" data-t="filled"><div class="lab"><span class="sw fl"></span>塗りつぶし図形 (32)</div><div class="chk"></div></div>
+    <div class="row on" data-t="outline"><div class="lab"><span class="sw ol"></span>輪郭図形 (15)</div><div class="chk"></div></div>
+    <div class="row on" data-t="pipe"><div class="lab"><span class="sw pp"></span>配管 (3)</div><div class="chk"></div></div>
+    <div class="row on" data-t="grid"><div class="lab"><span class="sw gr"></span>フレーム格子</div><div class="chk"></div></div>
+    <div class="row on" data-t="labels"><div class="lab"><span class="sw lb"></span>ブロック番号</div><div class="chk"></div></div>
+    <div class="row" data-t="labelsName"><div class="lab"><span class="sw lb"></span>機器名称</div><div class="chk"></div></div>
+  </div>
+
+  <div class="sect">
+    <h4>高さ基準 (m)</h4>
+    <div class="gauge" id="gauge"></div>
+  </div>
+
+  <div class="sect">
+    <h4>視点</h4>
+    <div class="vbtns">
+      <button data-v="iso">ISO</button>
+      <button data-v="top">平面</button>
+      <button data-v="side">側面</button>
+    </div>
+    <button class="fit" data-v="fit">全体にフィット</button>
+  </div>
+</div>
+
+<div id="readout">
+  <div class="k">SELECTION</div>
+  <div class="v" id="ro-v">未選択</div>
+  <div class="d" id="ro-d">図形をクリックすると番号・名称・高さを表示します。</div>
+</div>
+
+<div id="hint">左ドラッグ : 回転 &nbsp;|&nbsp; ホイール : ズーム<br>右ドラッグ : 平行移動 &nbsp;|&nbsp; クリック : 選択</div>
+<div id="err">3D ライブラリの読み込みに失敗しました。<br>ネットワーク（cdnjs.cloudflare.com）への接続をご確認ください。</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const MODEL = {"m_per_pt": 0.05296610169491525, "frames": {"12": 310, "16": 367, "20": 427, "23": 472, "27": 530.5, "30": 578.5, "35": 654, "39": 714, "43": 775, "48": 850}, "bounds": {"x0": 211.28, "x1": 888.96, "y0": 133.34, "y1": 670.87}, "shapes": [{"idx": 20282, "type": "filled", "color": [0.0, 0.667, 0.0], "rect": [661.34, 498.39, 676.71, 517.85], "polys": [[[661.34, 498.39], [676.71, 498.39], [676.71, 517.85], [661.34, 517.85]]], "num": 17, "name": "CENT COOL SW PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20283, "type": "filled", "color": [0.0, 0.667, 0.0], "rect": [692.46, 497.76, 707.83, 517.22], "polys": [[[692.46, 497.76], [707.83, 497.76], [707.83, 517.22], [692.46, 517.22]]], "num": 22, "name": "CENT COOL SW PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20284, "type": "filled", "color": [0.0, 0.667, 0.0], "rect": [788.0, 526.22, 806.96, 533.33], "polys": [[[788.0, 526.22], [806.96, 526.22], [806.96, 533.33], [788.0, 533.33]]], "num": 32, "name": "FW GEN EJECTOR PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20285, "type": "filled", "color": [0.0, 0.667, 0.0], "rect": [696.94, 325.8, 712.3, 339.07], "polys": [[[696.94, 325.8], [712.3, 325.8], [712.3, 339.07], [696.94, 339.07]]], "num": 20, "name": "ECGS W PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20286, "type": "outline", "color": [0.0, 0.667, 0.0], "rect": [776.71, 324.04, 818.74, 353.36], "polys": [[[776.71, 324.04], [818.74, 324.04], [818.74, 353.36], [776.71, 353.36]]], "num": 44, "name": "SEA CHEST", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20287, "type": "filled", "color": [0.0, 0.667, 0.0], "rect": [764.41, 490.84, 805.49, 505.7], "polys": [[[764.41, 490.84], [805.49, 490.84], [805.49, 505.7], [764.41, 505.7]]], "num": 30, "name": "BALLAST PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20288, "type": "filled", "color": [0.0, 0.667, 0.0], "rect": [765.2, 459.1, 803.28, 473.96], "polys": [[[765.2, 459.1], [803.28, 459.1], [803.28, 473.96], [765.2, 473.96]]], "num": 29, "name": "BALLAST PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20289, "type": "filled", "color": [0.0, 0.667, 0.0], "rect": [761.89, 362.84, 798.7, 383.06], "polys": [[[761.89, 362.84], [798.7, 362.84], [798.7, 383.06], [761.89, 383.06]]], "num": 27, "name": "FIRE & GS PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20290, "type": "filled", "color": [0.0, 0.667, 0.0], "rect": [759.85, 400.78, 800.01, 421.0], "polys": [[[759.85, 400.78], [800.01, 400.78], [800.01, 421.0], [759.85, 421.0]]], "num": 28, "name": "FIRE & BILGE PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20292, "type": "filled", "color": [1.0, 0.333, 0.0], "rect": [543.92, 389.05, 699.7, 456.38], "polys": [[[543.92, 389.05], [699.7, 389.05], [699.7, 456.38], [543.92, 456.38]]], "num": 15, "name": "MAIN ENGINE", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20293, "type": "pipe", "color": [0.0, 0.667, 0.0], "rect": [728.92, 329.46, 740.17, 549.47], "polys": [[[728.92, 329.46], [740.17, 329.46], [740.17, 549.47], [728.92, 549.47]]], "num": 51, "name": "PIPE (SEA CHEST CONN.)", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20294, "type": "pipe", "color": [0.0, 0.667, 0.0], "rect": [749.92, 327.12, 774.48, 348.37], "polys": [[[749.92, 327.12], [774.48, 327.12], [774.48, 348.37], [749.92, 348.37]]], "num": 26, "name": "pipe", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20295, "type": "outline", "color": [1.0, 1.0, 0.0], "rect": [489.31, 399.74, 651.67, 443.53], "polys": [[[489.31, 399.74], [651.67, 399.74], [651.67, 443.53], [489.31, 443.53]]], "num": 38, "name": "LO SUMP TK", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20296, "type": "filled", "color": [1.0, 1.0, 0.0], "rect": [433.81, 455.71, 438.82, 464.01], "polys": [[[433.81, 455.71], [438.82, 455.71], [438.82, 464.01], [433.81, 464.01]]], "num": 4, "name": "E: S/T LO CLR", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20297, "type": "filled", "color": [1.0, 1.0, 0.0], "rect": [455.03, 439.04, 467.23, 441.77], "polys": [[[455.03, 439.04], [467.23, 439.04], [467.23, 441.77], [455.03, 441.77]]], "num": 7, "name": "C: SLUDGE PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20298, "type": "filled", "color": [1.0, 1.0, 0.0], "rect": [456.63, 451.32, 468.83, 452.14], "polys": [[[456.63, 451.32], [468.83, 451.32], [468.83, 452.14], [456.63, 452.14]]], "num": 8, "name": "B: BILGE PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20299, "type": "filled", "color": [1.0, 1.0, 0.0], "rect": [444.84, 377.56, 465.1, 380.82], "polys": [[[444.84, 377.56], [465.1, 377.56], [465.1, 380.82], [444.84, 380.82]]], "num": 5, "name": "D: S/T LO PP No.2", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20300, "type": "filled", "color": [1.0, 1.0, 0.0], "rect": [373.18, 429.83, 383.53, 433.27], "polys": [[[373.18, 429.83], [383.53, 429.83], [383.53, 433.27], [373.18, 433.27]]], "num": 2, "name": "G: S/T SEAL AIR CONT UNIT", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20301, "type": "filled", "color": [1.0, 1.0, 0.0], "rect": [410.92, 444.46, 420.68, 454.23], "polys": [[[415.8, 444.46], [416.79, 444.56], [417.71, 444.84], [418.54, 445.29], [419.26, 445.89], [419.85, 446.61], [420.3, 447.44], [420.58, 448.36], [420.68, 449.35], [420.58, 450.33], [420.3, 451.25], [419.85, 452.08], [419.26, 452.8], [418.54, 453.4], [417.71, 453.85], [416.79, 454.13], [415.8, 454.23], [414.81, 454.13], [413.89, 453.85], [413.06, 453.4], [412.34, 452.8], [411.75, 452.08], [411.3, 451.25], [411.02, 450.33], [410.92, 449.35], [411.02, 448.36], [411.3, 447.44], [411.75, 446.61], [412.34, 445.89], [413.06, 445.29], [413.89, 444.84], [414.81, 444.56], [415.8, 444.46]]], "num": 35, "name": "F: S/T LO PRESS TK", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20302, "type": "filled", "color": [1.0, 1.0, 0.0], "rect": [313.7, 410.3, 328.7, 430.2], "polys": [[[313.7, 410.3], [328.7, 410.3], [328.7, 430.2], [313.7, 430.2]]], "num": 34, "name": "H: S/T FWD SEAL LO TK", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20307, "type": "filled", "color": [1.0, 1.0, 0.0], "rect": [502.86, 385.28, 515.96, 409.58], "polys": [[[502.86, 385.28], [515.96, 385.28], [515.96, 409.58], [502.86, 409.58]]], "num": 9, "name": "A: LO PP No.2", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20308, "type": "filled", "color": [1.0, 1.0, 0.0], "rect": [503.26, 431.52, 515.46, 455.2], "polys": [[[503.26, 431.52], [515.46, 431.52], [515.46, 455.2], [503.26, 455.2]]], "num": 10, "name": "A: LO PP No.1", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20309, "type": "outline", "color": [0.502, 0.0, 0.0], "rect": [533.6, 296.41, 683.56, 379.45], "polys": [[[533.6, 346.16], [683.56, 296.41], [683.56, 379.45], [533.6, 379.45]]], "num": 39, "name": "BILGE SLUDGE TK", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20310, "type": "filled", "color": [0.667, 0.25, 0.0], "rect": [625.31, 317.34, 643.56, 334.36], "polys": [[[634.44, 317.34], [636.28, 317.51], [638.0, 318.0], [639.55, 318.78], [640.9, 319.82], [642.01, 321.08], [642.85, 322.52], [643.38, 324.12], [643.56, 325.85], [643.38, 327.57], [642.85, 329.17], [642.01, 330.62], [640.9, 331.87], [639.55, 332.91], [638.0, 333.69], [636.28, 334.18], [634.44, 334.36], [632.59, 334.18], [630.87, 333.69], [629.32, 332.91], [627.97, 331.87], [626.86, 330.62], [626.03, 329.17], [625.5, 327.57], [625.31, 325.85], [625.5, 324.12], [626.03, 322.52], [626.86, 321.08], [627.97, 319.82], [629.32, 318.78], [630.87, 318.0], [632.59, 317.51], [634.44, 317.34]]], "num": 16, "name": "BILGE SEPA", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20311, "type": "filled", "color": [0.5, 0.0, 0.0], "rect": [584.86, 344.71, 603.11, 361.73], "polys": [[[593.99, 344.71], [595.83, 344.88], [597.55, 345.37], [599.1, 346.16], [600.45, 347.19], [601.56, 348.45], [602.4, 349.9], [602.92, 351.5], [603.11, 353.22], [602.92, 354.94], [602.4, 356.55], [601.56, 357.99], [600.45, 359.25], [599.1, 360.29], [597.55, 361.07], [595.83, 361.56], [593.99, 361.73], [592.14, 361.56], [590.42, 361.07], [588.87, 360.29], [587.52, 359.25], [586.41, 357.99], [585.57, 356.55], [585.05, 354.94], [584.86, 353.22], [585.05, 351.5], [585.57, 349.9], [586.41, 348.45], [587.52, 347.19], [588.87, 346.16], [590.42, 345.37], [592.14, 344.88], [593.99, 344.71]]], "num": 14, "name": "SCAV BOX DRAIN TK", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20312, "type": "filled", "color": [0.502, 0.0, 0.0], "rect": [588.45, 330.53, 598.93, 338.71], "polys": [[[588.45, 330.53], [598.93, 330.53], [598.93, 338.71], [588.45, 338.71]]], "num": 13, "name": "EGCS W MONITOR", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20313, "type": "filled", "color": [0.502, 0.0, 0.0], "rect": [560.1, 345.6, 572.37, 350.77], "polys": [[[560.1, 345.6], [572.37, 345.6], [572.37, 350.77], [560.1, 350.77]]], "num": 11, "name": "PURIF LO FEED PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20314, "type": "outline", "color": [0.502, 0.0, 0.0], "rect": [310.25, 374.65, 426.81, 466.88], "polys": [[[310.58, 400.25], [426.81, 374.65], [426.03, 466.88], [310.25, 444.11]]], "num": 37, "name": "BILGE TANK", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20315, "type": "outline", "color": [0.502, 0.0, 0.0], "rect": [310.58, 392.07, 351.16, 451.31], "polys": [[[310.58, 398.62], [351.16, 392.07], [350.84, 451.31], [311.89, 443.45]]], "num": 36, "name": "BW", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20316, "type": "outline", "color": [0.25, 0.667, 0.333], "rect": [714.9, 551.45, 773.67, 641.13], "polys": [[[715.25, 551.59], [714.9, 617.11], [773.67, 641.13], [773.02, 551.45]]], "num": 42, "name": "SEA CHEST", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20317, "type": "outline", "color": [0.502, 0.0, 0.0], "rect": [837.06, 292.55, 847.72, 320.47], "polys": [[[837.06, 292.55], [847.72, 292.55], [847.72, 320.47], [837.06, 320.47]]], "num": 46, "name": "BW", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20318, "type": "outline", "color": [1.0, 0.4, 0.4], "rect": [849.74, 372.73, 888.96, 420.42], "polys": [[[849.74, 372.73], [888.96, 372.73], [888.96, 420.42], [849.74, 420.42]]], "num": 47, "name": "NO3 FO TK(P)", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20319, "type": "outline", "color": [1.0, 0.4, 0.4], "rect": [850.24, 422.63, 888.96, 470.32], "polys": [[[850.24, 422.63], [888.96, 422.63], [888.96, 470.32], [850.24, 470.32]]], "num": 50, "name": "NO3 FO TK(S)", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20320, "type": "filled", "color": [0.0, 0.667, 0.0], "rect": [668.3, 325.79, 683.66, 339.62], "polys": [[[668.3, 325.79], [683.66, 325.79], [683.66, 339.62], [668.3, 339.62]]], "num": 18, "name": "ECGS W PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20321, "type": "filled", "color": [0.0, 0.667, 0.0], "rect": [698.79, 347.0, 711.15, 360.52], "polys": [[[698.79, 347.0], [711.15, 347.0], [711.15, 360.52], [698.79, 360.52]]], "num": 21, "name": "ECGS W PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20322, "type": "filled", "color": [0.0, 0.667, 0.0], "rect": [668.91, 346.22, 682.03, 361.99], "polys": [[[668.91, 346.22], [682.03, 346.22], [682.03, 361.99], [668.91, 361.99]]], "num": 19, "name": "ECGS W PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20323, "type": "outline", "color": [0.502, 0.0, 0.0], "rect": [578.29, 462.11, 653.89, 535.42], "polys": [[[579.93, 463.09], [652.91, 462.11], [653.89, 535.42], [578.29, 507.93]]], "num": 40, "name": "CLEAN DR TK", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20324, "type": "filled", "color": [1.0, 1.0, 0.0], "rect": [408.99, 416.21, 414.95, 426.73], "polys": [[[408.99, 416.21], [414.95, 416.21], [414.95, 426.73], [408.99, 426.73]]], "num": 3, "name": "INTERMEDIATE SHAFT BEARING", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20325, "type": "outline", "color": [1.0, 0.4, 0.4], "rect": [851.13, 568.91, 887.86, 670.87], "polys": [[[851.13, 568.91], [887.86, 568.91], [887.86, 670.87], [851.13, 670.87]]], "num": 48, "name": "MGO TK(S)", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20326, "type": "outline", "color": [0.502, 0.0, 0.0], "rect": [836.41, 520.27, 847.08, 552.13], "polys": [[[836.41, 520.27], [847.08, 520.27], [847.08, 552.13], [836.41, 552.13]]], "num": 45, "name": "BW", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20327, "type": "outline", "color": [1.0, 0.4, 0.4], "rect": [851.13, 133.34, 887.86, 271.34], "polys": [[[851.13, 133.34], [887.86, 133.34], [887.86, 271.34], [851.13, 271.34]]], "num": 49, "name": "MGO TK(P)", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20328, "type": "outline", "color": [0.0, 0.667, 0.0], "rect": [775.78, 422.47, 803.55, 452.54], "polys": [[[775.78, 422.47], [803.55, 422.47], [803.55, 452.54], [775.78, 452.54]]], "num": 43, "name": "ECHO SOUNDER", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20329, "type": "pipe", "color": [0.0, 0.667, 0.0], "rect": [740.17, 329.27, 750.11, 342.68], "polys": [[[740.17, 329.27], [750.11, 329.27], [750.11, 342.68], [740.17, 342.68]]], "num": 23, "name": "pipe", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20330, "type": "filled", "color": [0.502, 0.0, 0.0], "rect": [558.41, 354.6, 572.37, 359.77], "polys": [[[558.41, 354.6], [572.37, 354.6], [572.37, 359.77], [558.41, 359.77]]], "num": 12, "name": "PURIF LO FEED PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20331, "type": "filled", "color": [1.0, 1.0, 0.0], "rect": [445.87, 401.84, 466.13, 405.1], "polys": [[[445.87, 401.84], [466.13, 401.84], [466.13, 405.1], [445.87, 405.1]]], "num": 6, "name": "D: S/T LO PP No.1", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20332, "type": "filled", "color": [1.0, 0.0, 0.0], "rect": [818.77, 303.38, 826.23, 309.75], "polys": [[[818.77, 303.38], [826.23, 303.38], [826.23, 309.75], [818.77, 309.75]]], "num": 33, "name": "FO TRANS PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20333, "type": "filled", "color": [1.0, 0.0, 0.0], "rect": [788.6, 303.58, 796.06, 309.95], "polys": [[[788.6, 303.58], [796.06, 303.58], [796.06, 309.95], [788.6, 309.95]]], "num": 31, "name": "FO TRANS PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20334, "type": "filled", "color": [1.0, 0.0, 0.0], "rect": [752.01, 289.69, 759.48, 296.06], "polys": [[[752.01, 289.69], [759.48, 289.69], [759.48, 296.06], [752.01, 296.06]]], "num": 24, "name": "PURIF FO FEED PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20335, "type": "filled", "color": [1.0, 0.0, 0.0], "rect": [752.3, 301.54, 759.77, 307.91], "polys": [[[752.3, 301.54], [759.77, 301.54], [759.77, 307.91], [752.3, 307.91]]], "num": 25, "name": "PURIF FO FEED PP", "conf": "確定", "basis": "ユーザー確定"}, {"idx": 20336, "type": "outline", "color": [1.0, 0.0, 0.0], "rect": [687.27, 270.54, 761.45, 379.2], "polys": [[[761.45, 270.54], [687.27, 296.29], [687.27, 379.2], [760.58, 370.91]]], "num": 41, "name": "FO OVERFLOW TK", "conf": "確定", "basis": "ユーザー確定"}], "counts": {"filled": 32, "outline": 15, "pipe": 3}};
+
+(function(){
+  if(!window.THREE){document.getElementById('err').style.display='flex';return;}
+  const T=THREE, app=document.getElementById('app');
+
+  // ---------- scene ----------
+  const scene=new T.Scene();
+  scene.background=new T.Color(0x0c0f14);
+  scene.fog=new T.Fog(0x0c0f14, 55, 145);
+
+  const cam=new T.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 2000);
+  const renderer=new T.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth,innerHeight);
+  renderer.shadowMap.enabled=true; renderer.shadowMap.type=T.PCFSoftShadowMap;
+  app.appendChild(renderer.domElement);
+
+  scene.add(new T.HemisphereLight(0xbcd0e8,0x20242c,0.85));
+  const dir=new T.DirectionalLight(0xfff2dc,0.95);
+  dir.position.set(28,46,20); dir.castShadow=true;
+  dir.shadow.mapSize.set(2048,2048);
+  const d=46; Object.assign(dir.shadow.camera,{left:-d,right:d,top:d,bottom:-d,near:1,far:160});
+  scene.add(dir);
+  const dir2=new T.DirectionalLight(0x88a0c0,0.35); dir2.position.set(-26,24,-18); scene.add(dir2);
+
+  // ---------- transform ----------
+  const S=MODEL.m_per_pt, b=MODEL.bounds;
+  const cxp=(b.x0+b.x1)/2, cyp=(b.y0+b.y1)/2;
+  const Lx = p => (p-cxp)*S;          // world X (ship length)
+  const Lz = p => ((p-cyp)*S);        // world Z (ship breadth) [port/stbd corrected]
+  const zMin=Lz(b.y1), zMax=Lz(b.y0); // breadth extent
+
+  const COL={filled:0xffffff, outlineBase:0x5b87b8, pipe:0x2fb6a8};
+  const groups={filled:new T.Group(),outline:new T.Group(),pipe:new T.Group(),
+                grid:new T.Group(),labels:new T.Group(),labelsName:new T.Group()};
+  Object.values(groups).forEach(g=>scene.add(g));
+  groups.labelsName.visible=false;
+
+  const pickable=[];
+
+  function shapeFrom(poly){
+    const s=new T.Shape();
+    const n=poly.length;
+    for(let i=0;i<n;i++){const pt=poly[n-1-i];const x=Lx(pt[0]),y=-(pt[1]-cyp)*S; i?s.lineTo(x,y):s.moveTo(x,y);}
+    s.closePath(); return s;
+  }
+  function extrude(poly,h){
+    const g=new T.ExtrudeGeometry(shapeFrom(poly),{depth:h,bevelEnabled:false,curveSegments:6});
+    g.rotateX(-Math.PI/2);   // local +z (extrude) -> world +Y(up); local +y -> world -Z
+    return g;
+  }
+
+  // ---------- build shapes ----------
+  const FILL_BASE=2.5, FILL_H=1.5, OL_H=2.5, PIPE_Y=3.0;
+  MODEL.shapes.forEach(sp=>{
+    if(sp.type==='pipe'){
+      const r=sp.rect, rad=((r[2]-r[0])*S)/2;
+      const x=Lx((r[0]+r[2])/2), z0=Lz(r[1]), z1=Lz(r[3]);
+      const len=Math.abs(z1-z0);
+      const geo=new T.CylinderGeometry(rad,rad,len,20);
+      geo.rotateX(Math.PI/2);
+      const m=new T.Mesh(geo,new T.MeshStandardMaterial({color:COL.pipe,metalness:.55,roughness:.35}));
+      m.position.set(x,PIPE_Y,(z0+z1)/2); m.castShadow=true;
+      m.userData={kind:'pipe',num:sp.num,name:sp.name||'',conf:sp.conf||'',label:'配管 (SEA CHEST 連絡)'};
+      groups.pipe.add(m); pickable.push(m);
+      groups.labels.add(makeLabel(sp.num, x, PIPE_Y+0.7, (z0+z1)/2, '#2fb6a8'));
+      groups.labelsName.add(makeNameLabel(sp.name||'PIPE', x, PIPE_Y+1.3, (z0+z1)/2, '#2fb6a8'));
+      // flanges
+      [z0,z1].forEach(z=>{const f=new T.Mesh(new T.CylinderGeometry(rad*1.45,rad*1.45,rad*0.6,20),
+        new T.MeshStandardMaterial({color:0x247d73,metalness:.5,roughness:.4}));
+        f.rotateX(Math.PI/2); f.position.set(x,PIPE_Y,z); groups.pipe.add(f);});
+      return;
+    }
+    const filled=sp.type==='filled';
+    const base=filled?FILL_BASE:0, h=filled?FILL_H:OL_H;
+    const c=filled? new T.Color(sp.color[0],sp.color[1],sp.color[2]) : new T.Color(COL.outlineBase);
+    sp.polys.forEach(poly=>{
+      const geo=extrude(poly,h);
+      const mat=filled
+        ? new T.MeshStandardMaterial({color:c,metalness:.15,roughness:.62})
+        : new T.MeshStandardMaterial({color:new T.Color(sp.color[0],sp.color[1],sp.color[2]),
+            transparent:true,opacity:.20,metalness:.1,roughness:.8,side:T.DoubleSide,
+            depthWrite:false});
+      const mesh=new T.Mesh(geo,mat);
+      mesh.position.y=base; mesh.castShadow=filled; mesh.receiveShadow=true;
+      mesh.userData={kind:sp.type,num:sp.num,base:base,h:h,baseColor:mat.color.clone(),
+        baseOpacity:mat.opacity,name:sp.name||'',conf:sp.conf||'',
+        label:filled?('ブロック #'+sp.num):('輪郭 #'+sp.num)};
+      groups[sp.type].add(mesh); pickable.push(mesh);
+      // outline edge for filled blocks
+      if(filled){
+        const eg=new T.EdgesGeometry(geo,30);
+        const ln=new T.LineSegments(eg,new T.LineBasicMaterial({color:0x000000,transparent:true,opacity:.35}));
+        ln.position.y=base; mesh.userData.edge=ln; groups.filled.add(ln);
+      }
+    });
+    // number label (amber/steel) + name label (toggled separately)
+    {
+      const cx=(sp.rect[0]+sp.rect[2])/2, cy=(sp.rect[1]+sp.rect[3])/2;
+      const yN=filled?FILL_BASE+FILL_H+0.45:OL_H+0.35;
+      const bc=filled?'#e8932a':'#5b87b8';
+      groups.labels.add(makeLabel(sp.num, Lx(cx), yN, Lz(cy), bc));
+      groups.labelsName.add(makeNameLabel(sp.name||('#'+sp.num), Lx(cx), yN+0.55, Lz(cy), bc));
+    }
+  });
+
+  // ---------- number sprites ----------
+  function makeLabel(n,x,y,z,bcol){
+    bcol=bcol||'#e8932a';
+    const c=document.createElement('canvas'); c.width=c.height=128;
+    const g=c.getContext('2d');
+    g.fillStyle='rgba(12,15,20,.86)'; roundRect(g,14,30,100,68,16); g.fill();
+    g.lineWidth=5; g.strokeStyle=bcol; roundRect(g,14,30,100,68,16); g.stroke();
+    g.fillStyle='#fff'; g.font='bold 56px ui-monospace,monospace';
+    g.textAlign='center'; g.textBaseline='middle'; g.fillText(n,64,66);
+    const tex=new T.CanvasTexture(c);
+    const sp=new T.Sprite(new T.SpriteMaterial({map:tex,depthTest:false,transparent:true}));
+    sp.scale.set(1.5,1.5,1); sp.position.set(x,y,z); sp.renderOrder=10;
+    return sp;
+  }
+  function roundRect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);
+    g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);
+    g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+
+  function makeNameLabel(txt,x,y,z,bcol){
+    bcol=bcol||'#cfe0f2'; txt=String(txt||'');
+    const pad=18, fs=44;
+    const tmp=document.createElement('canvas').getContext('2d');
+    tmp.font='600 '+fs+'px ui-monospace,monospace';
+    const tw=Math.max(80,tmp.measureText(txt).width);
+    const cv=document.createElement('canvas');
+    cv.width=Math.ceil(tw+pad*2); cv.height=fs+pad*2;
+    const g=cv.getContext('2d');
+    g.fillStyle='rgba(12,15,20,.9)'; roundRect(g,2,2,cv.width-4,cv.height-4,14); g.fill();
+    g.lineWidth=4; g.strokeStyle=bcol; roundRect(g,2,2,cv.width-4,cv.height-4,14); g.stroke();
+    g.fillStyle='#fff'; g.font='600 '+fs+'px ui-monospace,monospace';
+    g.textAlign='center'; g.textBaseline='middle'; g.fillText(txt,cv.width/2,cv.height/2);
+    const sp=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(cv),depthTest:false,transparent:true}));
+    const sc=0.0085; sp.scale.set(cv.width*sc,cv.height*sc,1);
+    sp.position.set(x,y,z); sp.renderOrder=11; return sp;
+  }
+
+  // ---------- ground + frame grid ----------
+  const gx=(b.x1-b.x0)*S, gz=(b.y1-b.y0)*S, span=Math.max(gx,gz)*1.4;
+  const floor=new T.Mesh(new T.PlaneGeometry(span*1.6,span*1.6),
+    new T.MeshStandardMaterial({color:0x0e1117,roughness:1,metalness:0}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.02; floor.receiveShadow=true; scene.add(floor);
+  const gh=new T.GridHelper(span*1.6, Math.round(span*1.6), 0x223040, 0x161c25);
+  gh.position.y=0; groups.grid.add(gh);
+
+  // frame stations
+  const frames=MODEL.frames;
+  Object.keys(frames).map(Number).sort((a,b)=>a-b).forEach(fr=>{
+    const x=Lx(frames[fr]);
+    const g=new T.BufferGeometry().setFromPoints([new T.Vector3(x,0.01,zMin-1.2),new T.Vector3(x,0.01,zMax+1.2)]);
+    const ln=new T.Line(g,new T.LineBasicMaterial({color:0x39506b,transparent:true,opacity:.7}));
+    groups.grid.add(ln);
+    groups.grid.add(makeFrameTag('Fr'+fr, x, 0.05, zMax+2.4));
+  });
+  function makeFrameTag(txt,x,y,z){
+    const c=document.createElement('canvas'); c.width=160;c.height=56;
+    const g=c.getContext('2d'); g.fillStyle='#6f8198';
+    g.font='600 30px ui-monospace,monospace'; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText(txt,80,30);
+    const sp=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(c),transparent:true,depthTest:false}));
+    sp.scale.set(2.0,0.7,1); sp.position.set(x,y,z); return sp;
+  }
+
+  // elevation datum ruler (signature) — at forward-port corner
+  (function elevation(){
+    const x=Lx(b.x0)-1.4, z=zMax+1.0;
+    const levels=[[0,'0.0'],[2.5,'2.5'],[3.0,'3.0'],[4.0,'4.0']];
+    const top=4.0;
+    const ax=new T.BufferGeometry().setFromPoints([new T.Vector3(x,0,z),new T.Vector3(x,top,z)]);
+    groups.grid.add(new T.Line(ax,new T.LineBasicMaterial({color:0x4a5c72})));
+    levels.forEach(([yv,tx])=>{
+      const tg=new T.BufferGeometry().setFromPoints([new T.Vector3(x,yv,z),new T.Vector3(x+0.7,yv,z)]);
+      groups.grid.add(new T.Line(tg,new T.LineBasicMaterial({color:0x6f8198})));
+    });
+  })();
+
+  // ---------- build elevation gauge (DOM) ----------
+  (function(){
+    const g=document.getElementById('gauge'); const H=110, max=4.4;
+    g.innerHTML='<div class="axis"></div>';
+    const bands=[[0,2.5,'#5b87b8'],[2.5,4.0,'#e8932a']];
+    bands.forEach(([a,bb,c])=>{
+      const top=H-(bb/max*H), hh=(bb-a)/max*H;
+      const el=document.createElement('div'); el.className='band';
+      el.style.cssText=`top:${top+4}px;height:${hh}px;background:${c}`; g.appendChild(el);
+    });
+    const lv=[[0,'0.0','床 (基準)'],[2.5,'2.5','輪郭 上端 / 塗り 下端'],[3.0,'3.0','配管 中心'],[4.0,'4.0','塗り 上端 (暫定)']];
+    lv.forEach(([y,m,desc])=>{
+      const top=H-(y/max*H)+4;
+      const r=document.createElement('div'); r.className='glvl';
+      r.innerHTML=`<span class="gm" style="top:${top-7}px">${m}</span>`+
+        `<span class="tick" style="top:${top}px;background:${y===3?'#2fb6a8':y>=2.5?'#e8932a':'#5b87b8'}"></span>`+
+        `<span class="gd" style="top:${top-7}px">${desc}</span>`;
+      g.appendChild(r);
+    });
+  })();
+
+  // ---------- camera framing ----------
+  const target=new T.Vector3(0,1.6,0);
+  let radius=span*1.15, theta=-Math.PI*0.62, phi=Math.PI*0.32;
+  function applyCam(){
+    cam.position.set(
+      target.x+radius*Math.sin(phi)*Math.cos(theta),
+      target.y+radius*Math.cos(phi),
+      target.z+radius*Math.sin(phi)*Math.sin(theta));
+    cam.lookAt(target);
+  }
+  const views={
+    iso:()=>{theta=-Math.PI*0.62;phi=Math.PI*0.34;radius=span*1.15;target.set(0,1.6,0);},
+    top:()=>{theta=-Math.PI/2;phi=0.0001;radius=span*1.05;target.set(0,0,0);},
+    side:()=>{theta=Math.PI;phi=Math.PI*0.5;radius=span*1.05;target.set(0,1.5,0);},
+    fit:()=>{views.iso();}
+  };
+  views.iso(); applyCam();
+
+  // ---------- controls ----------
+  let drag=null,px=0,py=0;
+  const el=renderer.domElement;
+  el.addEventListener('mousedown',e=>{drag=e.button===2?'pan':'rot';px=e.clientX;py=e.clientY;
+    moved=false;});
+  let moved=false;
+  addEventListener('mousemove',e=>{
+    if(!drag)return; const dx=e.clientX-px,dy=e.clientY-py; px=e.clientX;py=e.clientY;
+    if(Math.abs(dx)+Math.abs(dy)>3)moved=true;
+    if(drag==='rot'){theta-=dx*0.006; phi=Math.max(0.04,Math.min(Math.PI*0.9,phi-dy*0.006));}
+    else{ const pan=radius*0.0016;
+      const rx=new T.Vector3(Math.cos(theta+Math.PI/2),0,Math.sin(theta+Math.PI/2));
+      const up=new T.Vector3(0,1,0);
+      target.addScaledVector(rx,-dx*pan); target.addScaledVector(up,dy*pan);}
+    applyCam();
+  });
+  addEventListener('mouseup',()=>{drag=null;});
+  el.addEventListener('contextmenu',e=>e.preventDefault());
+  el.addEventListener('wheel',e=>{e.preventDefault();
+    radius=Math.max(6,Math.min(260,radius*(1+Math.sign(e.deltaY)*0.08)));applyCam();},{passive:false});
+  // touch
+  let t0=null;
+  el.addEventListener('touchstart',e=>{if(e.touches.length===1){drag='rot';px=e.touches[0].clientX;py=e.touches[0].clientY;}
+    else if(e.touches.length===2){t0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:true});
+  el.addEventListener('touchmove',e=>{
+    if(e.touches.length===1&&drag){const dx=e.touches[0].clientX-px,dy=e.touches[0].clientY-py;
+      px=e.touches[0].clientX;py=e.touches[0].clientY;
+      theta-=dx*0.006;phi=Math.max(0.04,Math.min(Math.PI*0.9,phi-dy*0.006));applyCam();}
+    else if(e.touches.length===2&&t0){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      radius=Math.max(6,Math.min(260,radius*(t0/d)));t0=d;applyCam();}},{passive:true});
+  el.addEventListener('touchend',()=>{drag=null;t0=null;});
+
+  document.querySelectorAll('.vbtns button,.fit').forEach(btn=>{
+    btn.onclick=()=>{views[btn.dataset.v]&&views[btn.dataset.v]();applyCam();};
+  });
+
+  // ---------- toggles ----------
+  document.querySelectorAll('.row').forEach(r=>{
+    r.onclick=()=>{r.classList.toggle('on');
+      groups[r.dataset.t].visible=r.classList.contains('on');};
+  });
+
+  // ---------- picking ----------
+  const ray=new T.Raycaster(), mouse=new T.Vector2();
+  let selected=null;
+  function clearSel(){
+    if(!selected)return;
+    if(selected.userData.kind==='outline'){selected.material.opacity=selected.userData.baseOpacity;}
+    selected.material.emissive&&selected.material.emissive.setHex(0x000000);
+    selected.material.color.copy(selected.userData.baseColor||selected.material.color);
+    selected=null;
+  }
+  el.addEventListener('click',e=>{
+    if(moved)return;
+    mouse.x=(e.clientX/innerWidth)*2-1; mouse.y=-(e.clientY/innerHeight)*2+1;
+    ray.setFromCamera(mouse,cam);
+    const hit=ray.intersectObjects(pickable,false);
+    clearSel();
+    const rv=document.getElementById('ro-v'), rd=document.getElementById('ro-d');
+    if(!hit.length){rv.textContent='未選択';rd.textContent='図形をクリックすると番号・名称・高さを表示します。';return;}
+    selected=hit[0].object; const u=selected.userData;
+    if(selected.material.emissive)selected.material.emissive.setHex(0x3a2a08);
+    if(u.kind==='outline')selected.material.opacity=0.5;
+    if(u.kind==='filled'){
+      rv.innerHTML='<span class="hot">#'+u.num+'</span> '+(u.name||'(名称未設定)');
+      rd.innerHTML='区分 : 塗りつぶし（高さ 2.5–4.0m / 暫定厚 1.50m）<br>下端 z = 2.50 m ／ 上端 z = 4.00 m';
+    }else if(u.kind==='outline'){
+      rv.innerHTML='<span style="color:#5b87b8">#'+u.num+'</span> '+(u.name||'(名称未設定)');
+      rd.innerHTML='区分 : 輪郭（高さ 0–2.5m）<br>z = 0.00 m → 2.50 m（平面形状を鉛直に押し出し）';
+    }else{
+      rv.innerHTML='<span style="color:#2fb6a8">#'+u.num+'</span> '+(u.name||'PIPE');
+      rd.innerHTML='区分 : 配管（中心 z = 3.00 m）<br>Fr39–43 / SEA CHEST 連絡';
+    }
+  });
+
+  // ---------- loop ----------
+  addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);});
+  (function loop(){requestAnimationFrame(loop);renderer.render(scene,cam);})();
+})();
+</script>
+</body>
+</html>
